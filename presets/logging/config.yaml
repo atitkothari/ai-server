@@ -1,0 +1,44 @@
+version: 1
+disable_existing_loggers: False
+filters:
+  request_id_filter:
+    (): utils.logging.RequestIDFilter
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    stream: ext://sys.stdout
+    filters: [request_id_filter]
+    formatter: standard
+  logfile:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    filename: ai-server.log
+    maxBytes: 1000000
+    backupCount: 3
+    filters: [request_id_filter]
+    formatter: standard
+  watchtower:
+    class: watchtower.CloudWatchLogHandler
+    level: INFO
+    log_group_name: ai-server-logs
+    log_stream_name: "{logger_name}-{strftime:%y-%m-%d}"
+    send_interval: 10
+    create_log_group: True
+    filters: [request_id_filter]
+    formatter: standard
+
+formatters:
+  standard:
+    format: "%(asctime)s - %(levelname)s - %(request_id)s - %(message)s"
+
+root:
+  level: INFO
+  handlers: [console, logfile, watchtower]
+
+loggers:
+  botocore:
+    level: INFO
+  urllib3:
+    level: INFO
